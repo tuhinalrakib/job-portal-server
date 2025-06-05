@@ -37,6 +37,19 @@ async function run() {
     const applicationCollection = client.db("jobsDb").collection("application")
 
     // Job Related APIs
+    app.get("/jobs/applications", async (req,res)=>{
+        const email = req.query.email 
+        const query = { hr_email : email}
+        const jobs = await jobsCollection.find(query).toArray()
+
+        for(const job of jobs){
+          const applications_query ={jobId : job._id.toString()}
+          const application_count = await applicationCollection.countDocuments(applications_query)
+          job.application_count = application_count
+        }
+        res.send(jobs)
+    })
+
     app.post("/jobs", async (req,res)=>{
         const newJob = req.body
         const result = await jobsCollection.insertOne(newJob)
@@ -61,6 +74,7 @@ async function run() {
         const result = await jobsCollection.findOne(query)
         res.send(result)
     })
+
 
     // coud be done but not should be done
     // app.get("/jobsByEmail", async(req,res)=>{
@@ -103,6 +117,19 @@ async function run() {
         const job_id = req.params.job_id
         const query = { jobId : job_id}
         const result = await applicationCollection.find(query).toArray()
+        res.send(result)
+    })
+
+    app.patch("/applications/:id", async (req, res)=>{
+        const id = req.params.id 
+        const updated = req.body
+        const filter = { _id : new ObjectId(id)}
+        const updatedDoc = {
+          $set : {
+            status : updated.status
+          }
+        }
+        const result = await applicationCollection.updateOne(filter, updatedDoc)
         res.send(result)
     })
 
